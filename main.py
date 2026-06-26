@@ -1,6 +1,6 @@
 from src.data.loader import DataLoader
 from src.data.validator import DataValidator
-
+from src.visualization.eda import EDA
 
 DATA_PATH = "data/raw/ks-projects-201801.csv"
 SAVE_PATH = "data/interim/cleaned_dataset.csv"
@@ -16,3 +16,6 @@ loader.save_clean_data(df, SAVE_PATH)
 validator = DataValidator()
 
 validator.validate(df)
+
+eda = EDA()
+eda.run(df)

@@ -2,6 +2,7 @@ from src.data.loader import DataLoader
 from src.data.validator import DataValidator
 from src.visualization.eda import EDA
 from src.preprocessing.text_cleaner import TextCleaner
+from src.vectorization.tfidf import TFIDFVectorizer
 
 class Pipeline:
 
@@ -17,6 +18,7 @@ class Pipeline:
 
         self.eda = EDA()
         self.cleaner = TextCleaner()
+        self.vectorizer = TFIDFVectorizer()
 
     # =====================================================
     # DATA INGESTION
@@ -84,6 +86,41 @@ class Pipeline:
         )
 
         return df
+    # =====================================================
+# TF-IDF
+# =====================================================
+
+    def vectorize_text(self, df):
+
+        print("\nGenerating TF-IDF Matrix...")
+
+        X_text = self.vectorizer.fit_transform(
+
+            df["clean_text"]
+
+        )
+
+        self.vectorizer.save()
+
+        self.vectorizer.save_vocabulary()
+
+        print(
+
+            f"Vocabulary Size : "
+
+            f"{self.vectorizer.vocabulary_size()}"
+
+        )
+
+        print(
+
+            f"Sparse Matrix Shape : "
+
+            f"{X_text.shape}"
+
+        )
+
+        return X_text
 
     def run(self):
 
@@ -96,5 +133,6 @@ class Pipeline:
         self.perform_eda(df)
 
         df = self.preprocess_text(df)
+        X_text = self.vectorize_text(df)
 
         print("\nPipeline Completed Successfully!")

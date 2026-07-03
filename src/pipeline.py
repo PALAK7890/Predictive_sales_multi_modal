@@ -5,6 +5,7 @@ from src.preprocessing.text_cleaner import TextCleaner
 from src.vectorization.tfidf import TFIDFVectorizer
 from src.preprocessing.tabular_preprocessor import TabularPreprocessor
 from src.fusion.feature_fusion import FeatureFusion
+from src.models.train import ModelTrainer
 
 class Pipeline:
 
@@ -23,6 +24,7 @@ class Pipeline:
         self.vectorizer = TFIDFVectorizer()
         self.tabular = TabularPreprocessor()
         self.fusion = FeatureFusion()
+        self.trainer = ModelTrainer()
 
     # DATA INGESTION
 
@@ -151,6 +153,26 @@ class Pipeline:
         )
 
         return X, y
+    def train_model(self, X, y):
+
+        X_train, X_test, y_train, y_test = self.trainer.split(
+            X,
+            y,
+        )
+
+        self.trainer.fit(
+            X_train,
+            y_train,
+        )
+
+        self.trainer.save()
+
+        return (
+            X_train,
+            X_test,
+            y_train,
+            y_test,
+        )
     def run(self):
 
         print("\nStarting Pipeline...\n")
@@ -169,11 +191,8 @@ class Pipeline:
 
         X_tabular, y = self.preprocess_tabular(df)
 
-        X, y = self.fuse_features(
-            X_text,
-            X_tabular,
-            y
-        )
+        X, y = self.fuse_features( X_text,X_tabular, y )
+        X_train, X_test, y_train, y_test = self.train_model(X, y, )
 
         print("\nPipeline Completed Successfully!")
 

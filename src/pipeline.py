@@ -4,6 +4,7 @@ from src.visualization.eda import EDA
 from src.preprocessing.text_cleaner import TextCleaner
 from src.vectorization.tfidf import TFIDFVectorizer
 from src.preprocessing.tabular_preprocessor import TabularPreprocessor
+from src.fusion.feature_fusion import FeatureFusion
 
 class Pipeline:
 
@@ -21,6 +22,7 @@ class Pipeline:
         self.cleaner = TextCleaner()
         self.vectorizer = TFIDFVectorizer()
         self.tabular = TabularPreprocessor()
+        self.fusion = FeatureFusion()
 
     # DATA INGESTION
 
@@ -130,56 +132,49 @@ class Pipeline:
         print(f"Target Shape         : {y.shape}")
 
         return X_tabular, y
+    def fuse_features(
+        self,
+        X_text,
+        X_tabular,
+        y,):
 
+        print("\nFusing Features...")
+
+        X, y = self.fusion.fit_transform(
+
+            X_text,
+
+            X_tabular,
+
+            y,
+
+        )
+
+        return X, y
     def run(self):
 
         print("\nStarting Pipeline...\n")
 
-        # ----------------------------------------
-        # Load
-        # ----------------------------------------
-
         df = self.load_data()
 
-        # ----------------------------------------
-        # Keep only successful / failed
-        # BEFORE any preprocessing
-        # ----------------------------------------
-
         df = self.tabular.filter_final_campaigns(df)
-
-        print(
-            f"\nRemaining campaigns : {len(df):,}"
-        )
-
-        # ----------------------------------------
 
         self.validate(df)
 
         self.perform_eda(df)
 
-        # ----------------------------------------
-
         df = self.preprocess_text(df)
 
         X_text = self.vectorize_text(df)
 
-        # ----------------------------------------
-
         X_tabular, y = self.preprocess_tabular(df)
 
-        print("\n")
-
-        print("="*60)
-
-        print("PIPELINE SUMMARY")
-
-        print("="*60)
-
-        print(f"TF-IDF Matrix : {X_text.shape}")
-
-        print(f"Tabular Matrix: {X_tabular.shape}")
-
-        print(f"Target Vector : {y.shape}")
+        X, y = self.fuse_features(
+            X_text,
+            X_tabular,
+            y
+        )
 
         print("\nPipeline Completed Successfully!")
+
+        return X, y

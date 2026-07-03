@@ -20,7 +20,6 @@ class TFIDFVectorizer:
             **TFIDF_CONFIG
         )
 
-    # --------------------------------------------------
 
     def fit(self, text):
 
@@ -28,65 +27,32 @@ class TFIDFVectorizer:
 
         return self
 
-    # --------------------------------------------------
-
     def transform(self, text):
 
         return self.vectorizer.transform(text)
 
-    # --------------------------------------------------
 
     def fit_transform(self, text):
 
         return self.vectorizer.fit_transform(text)
 
-    # --------------------------------------------------
 
     def save(self):
 
-        Path(
-            "models/vectorizers"
-        ).mkdir(
-            parents=True,
-            exist_ok=True
-        )
+        Path( "models/vectorizers").mkdir(parents=True, exist_ok=True )
 
-        joblib.dump(
+        joblib.dump(self.vectorizer, "models/vectorizers/tfidf.pkl" )
 
-            self.vectorizer,
 
-            "models/vectorizers/tfidf.pkl"
-
-        )
-
-    # --------------------------------------------------
 
     def save_vocabulary(self):
 
-        Path(
-            "reports/tables"
-        ).mkdir(
-            parents=True,
-            exist_ok=True
-        )
+        Path( "reports/tables").mkdir(parents=True, exist_ok=True )
 
-        vocabulary = pd.DataFrame({
+        vocabulary = pd.DataFrame({"feature": self.vectorizer.get_feature_names_out()})
 
-            "feature":
+        vocabulary.to_csv("reports/tables/vocabulary.csv",   index=False )
 
-            self.vectorizer.get_feature_names_out()
-
-        })
-
-        vocabulary.to_csv(
-
-            "reports/tables/vocabulary.csv",
-
-            index=False
-
-        )
-
-    # --------------------------------------------------
 
     def vocabulary_size(self):
 

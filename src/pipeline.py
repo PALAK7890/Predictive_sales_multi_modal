@@ -3,6 +3,7 @@ from src.data.validator import DataValidator
 from src.visualization.eda import EDA
 from src.preprocessing.text_cleaner import TextCleaner
 from src.vectorization.tfidf import TFIDFVectorizer
+from src.preprocessing.tabular_preprocessor import TabularPreprocessor
 
 class Pipeline:
 
@@ -19,10 +20,10 @@ class Pipeline:
         self.eda = EDA()
         self.cleaner = TextCleaner()
         self.vectorizer = TFIDFVectorizer()
+        self.tabular = TabularPreprocessor()
 
-    # =====================================================
     # DATA INGESTION
-    # =====================================================
+
 
     def load_data(self):
 
@@ -37,25 +38,22 @@ class Pipeline:
 
         return df
 
-    # =====================================================
     # VALIDATION
-    # =====================================================
+
 
     def validate(self, df):
 
         self.validator.validate(df)
 
-    # =====================================================
     # EDA
-    # =====================================================
+
 
     def perform_eda(self, df):
 
         self.eda.run(df)
 
-    # =====================================================
+
     # PIPELINE
-    # =====================================================
 
     def preprocess_text(self, df):
 
@@ -86,9 +84,8 @@ class Pipeline:
         )
 
         return df
-    # =====================================================
+
 # TF-IDF
-# =====================================================
 
     def vectorize_text(self, df):
 
@@ -112,27 +109,77 @@ class Pipeline:
 
         )
 
-        print(
-
-            f"Sparse Matrix Shape : "
-
-            f"{X_text.shape}"
+        print( f"Sparse Matrix Shape : "
+              f"{X_text.shape}"
 
         )
 
         return X_text
 
+    def preprocess_tabular(self, df):
+
+        print("\nProcessing tabular features...")
+
+        X_tabular, y = self.tabular.fit_transform(df)
+
+        self.tabular.summary()
+
+        self.tabular.save()
+
+        print(f"\nTabular Matrix Shape : {X_tabular.shape}")
+        print(f"Target Shape         : {y.shape}")
+
+        return X_tabular, y
+
     def run(self):
 
         print("\nStarting Pipeline...\n")
 
+        # ----------------------------------------
+        # Load
+        # ----------------------------------------
+
         df = self.load_data()
+
+        # ----------------------------------------
+        # Keep only successful / failed
+        # BEFORE any preprocessing
+        # ----------------------------------------
+
+        df = self.tabular.filter_final_campaigns(df)
+
+        print(
+            f"\nRemaining campaigns : {len(df):,}"
+        )
+
+        # ----------------------------------------
 
         self.validate(df)
 
         self.perform_eda(df)
 
+        # ----------------------------------------
+
         df = self.preprocess_text(df)
+
         X_text = self.vectorize_text(df)
+
+        # ----------------------------------------
+
+        X_tabular, y = self.preprocess_tabular(df)
+
+        print("\n")
+
+        print("="*60)
+
+        print("PIPELINE SUMMARY")
+
+        print("="*60)
+
+        print(f"TF-IDF Matrix : {X_text.shape}")
+
+        print(f"Tabular Matrix: {X_tabular.shape}")
+
+        print(f"Target Vector : {y.shape}")
 
         print("\nPipeline Completed Successfully!")

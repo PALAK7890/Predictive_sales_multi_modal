@@ -1,13 +1,33 @@
 """
-Global project configuration.
-Modify values here instead of changing source code.
+Global Configuration
 """
 
 # =====================================================
-# RANDOMNESS
+# RANDOM STATE
 # =====================================================
 
 RANDOM_STATE = 42
+
+# =====================================================
+# DATASET CONFIG
+# =====================================================
+
+TARGET_COLUMN = "state"
+
+POSITIVE_CLASS = "successful"
+
+NEGATIVE_CLASS = "failed"
+
+LEAKAGE_COLUMNS = [
+    "pledged",
+    "backers",
+    "usd_pledged",
+    "usd_pledged_real",
+]
+
+DROP_COLUMNS = [
+    "id",
+]
 
 # =====================================================
 # TF-IDF
@@ -27,9 +47,5 @@ TFIDF_CONFIG = {
 
     "strip_accents": "unicode"
 }
-
-# =====================================================
-# TRAIN / TEST
-# =====================================================
 
 TEST_SIZE = 0.20

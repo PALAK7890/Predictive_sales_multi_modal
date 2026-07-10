@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import joblib
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -10,7 +12,6 @@ from sklearn.metrics import (
     f1_score,
     roc_auc_score,
     classification_report,
-    confusion_matrix,
     ConfusionMatrixDisplay,
     RocCurveDisplay,
     PrecisionRecallDisplay,
@@ -58,6 +59,7 @@ class ModelEvaluator:
         self.plot_confusion_matrix(y_test, y_pred)
         self.plot_roc(model, X_test, y_test)
         self.plot_pr(model, X_test, y_test)
+        self.feature_importance(model)
 
         return metrics
 
@@ -101,4 +103,78 @@ class ModelEvaluator:
 
         plt.tight_layout()
         plt.savefig(self.figures_dir / "precision_recall_curve.png")
+        plt.close()
+
+    def feature_importance(self, model):
+
+        print("\nAnalyzing feature importance...")
+
+        tfidf = joblib.load("models/vectorizers/tfidf.pkl")
+        tabular = joblib.load("models/encoders/tabular_preprocessor.pkl")
+
+        text_features = list(tfidf.get_feature_names_out())
+
+        tabular_features = [
+            feature.replace("numeric__", "").replace("categorical__", "")
+            for feature in tabular.get_feature_names_out()
+        ]
+
+        feature_names = text_features + tabular_features
+
+        feature_types = (
+            ["Text"] * len(text_features)
+            +
+            [
+                "Numeric" if "__" not in feature else "Category"
+                for feature in tabular.get_feature_names_out()
+            ]
+        )
+
+        importance = pd.DataFrame({
+            "Feature": feature_names,
+            "Type": feature_types,
+            "Coefficient": model.coef_[0]
+        })
+
+        importance["Importance"] = importance["Coefficient"].abs()
+
+        importance = importance.sort_values(
+            "Importance",
+            ascending=False
+        )
+
+        importance.to_csv(
+            self.tables_dir / "feature_importance.csv",
+            index=False,
+        )
+
+        print("\nTop 15 Features\n")
+        print(
+            importance[
+                ["Feature", "Type", "Coefficient"]
+            ].head(15)
+        )
+
+
+    
+    def plot_feature_importance(self, importance):
+
+        plt.figure(figsize=(10,7))
+
+        data = importance.sort_values("Coefficient")
+
+        plt.barh(
+            data["Feature"],
+            data["Coefficient"]
+        )
+
+        plt.xlabel("Coefficient")
+        plt.title("Top Feature Importance")
+
+        plt.tight_layout()
+
+        plt.savefig(
+            self.figures_dir / "feature_importance.png"
+        )
+
         plt.close()

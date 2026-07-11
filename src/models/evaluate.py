@@ -29,14 +29,18 @@ class ModelEvaluator:
 
     def evaluate(self, model, X_test, y_test):
         y_pred = model.predict(X_test)
-        y_prob = model.predict_proba(X_test)[:, 1]
+
+        if hasattr(model, "predict_proba"):
+            y_score = model.predict_proba(X_test)[:, 1]
+        else:
+            y_score = model.decision_function(X_test)
 
         metrics = {
             "Accuracy": accuracy_score(y_test, y_pred),
             "Precision": precision_score(y_test, y_pred),
             "Recall": recall_score(y_test, y_pred),
             "F1 Score": f1_score(y_test, y_pred),
-            "ROC AUC": roc_auc_score(y_test, y_prob),
+            "ROC AUC": roc_auc_score(y_test, y_score),
         }
 
         print("\nEvaluation Results")

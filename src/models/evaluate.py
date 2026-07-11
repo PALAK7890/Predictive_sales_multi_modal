@@ -114,21 +114,24 @@ class ModelEvaluator:
 
         text_features = list(tfidf.get_feature_names_out())
 
+        raw_tabular_features = tabular.get_feature_names_out()
+
         tabular_features = [
             feature.replace("numeric__", "").replace("categorical__", "")
-            for feature in tabular.get_feature_names_out()
+            for feature in raw_tabular_features
         ]
+
+        feature_types = []
+
+        for feature in raw_tabular_features:
+            if feature.startswith("numeric__"):
+                feature_types.append("Numeric")
+            else:
+                feature_types.append("Category")
 
         feature_names = text_features + tabular_features
 
-        feature_types = (
-            ["Text"] * len(text_features)
-            +
-            [
-                "Numeric" if "__" not in feature else "Category"
-                for feature in tabular.get_feature_names_out()
-            ]
-        )
+        feature_types = ["Text"] * len(text_features) + feature_types
 
         importance = pd.DataFrame({
             "Feature": feature_names,

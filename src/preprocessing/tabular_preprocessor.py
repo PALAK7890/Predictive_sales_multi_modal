@@ -67,6 +67,9 @@ class TabularPreprocessor:
 
         df["goal_log"] = np.log1p(df["goal"])
         df["usd_goal_real_log"] = np.log1p(df["usd_goal_real"])
+        df["title_length"] = df["name"].str.len()
+        df["title_word_count"] = df["name"].str.split().str.len()
+        
 
         if {"launched", "deadline"}.issubset(df.columns):
 
@@ -84,6 +87,7 @@ class TabularPreprocessor:
                 columns=["launched", "deadline"],
                 inplace=True,
             )
+        df["goal_per_day"] = df["goal_log"] / (df["campaign_duration"] + 1)
 
         return df
 

@@ -8,7 +8,8 @@ from src.fusion.feature_fusion import FeatureFusion
 from src.models.train import ModelTrainer
 from src.models.evaluate import ModelEvaluator
 
-
+from sklearn.model_selection import train_test_split
+from configs.config import RANDOM_STATE, TEST_SIZE
 class Pipeline:
 
     def __init__(self):
@@ -22,7 +23,7 @@ class Pipeline:
         self.vectorizer = TFIDFVectorizer()
         self.tabular = TabularPreprocessor()
         self.fusion = FeatureFusion()
-        self.trainer = ModelTrainer('svm')
+        self.trainer = ModelTrainer()
         self.evaluator = ModelEvaluator()
 
     def load_data(self):
@@ -84,13 +85,77 @@ class Pipeline:
         print("\nFusing features...")
         return self.fusion.fit_transform(X_text, X_tabular, y)
 
-    def train_model(self, X, y):
-        X_train, X_test, y_train, y_test = self.trainer.split(X, y)
+    def train_model(self, df, X, y):
+
+        train_idx, test_idx = train_test_split(
+            df.index,
+            test_size=TEST_SIZE,
+            random_state=RANDOM_STATE,
+            stratify=y,
+        )
+
+        X_train = X[train_idx]
+        X_test = X[test_idx]
+
+        y_train = y.iloc[train_idx]
+        y_test = y.iloc[test_idx]
+
+        df_train = df.loc[train_idx]
+        df_test = df.loc[test_idx]
 
         self.trainer.fit(X_train, y_train)
         self.trainer.save()
 
-        return X_train, X_test, y_train, y_test
+        return (
+            X_train,
+            X_test,
+            y_train,
+            y_test,
+            df_train,
+            df_test,
+        )
+    def analyze_errors(self,X_test, df_test, y_test):
+
+        y_pred = self.trainer.predict(X_test)
+
+        errors = df_test.copy()
+
+        errors["actual"] = y_test.values
+        errors["predicted"] = y_pred
+
+        false_positive = errors[
+            (errors["actual"] == 0)
+            & (errors["predicted"] == 1)
+        ]
+
+        false_negative = errors[
+            (errors["actual"] == 1)
+            & (errors["predicted"] == 0)
+        ]
+
+        print("\nFalse Positives")
+        print(
+            false_positive[
+                [
+                    "name",
+                    "goal",
+                    "category",
+                    "main_category",
+                ]
+            ].head(20)
+        )
+
+        print("\nFalse Negatives")
+        print(
+            false_negative[
+                [
+                    "name",
+                    "goal",
+                    "category",
+                    "main_category",
+                ]
+            ].head(20)
+        )
 
     def evaluate_model(self, X_test, y_test):
         return self.evaluator.evaluate(
@@ -104,6 +169,7 @@ class Pipeline:
 
         df = self.load_data()
         df = self.tabular.filter_final_campaigns(df)
+        df = df.reset_index(drop=True)
 
         self.validate(df)
         self.perform_eda(df)
@@ -115,9 +181,22 @@ class Pipeline:
 
         X, y = self.fuse_features(X_text, X_tabular, y)
 
-        _, X_test, _, y_test = self.train_model(X, y)
+        (
+        _,
+        X_test,
+        _,
+        y_test,
+        _,
+        df_test,
+    ) = self.train_model(df, X, y)
 
         self.evaluate_model(X_test, y_test)
+
+        self.analyze_errors(
+            X_test,
+            df_test,
+            y_test,
+        )
 
         print("\nPipeline completed successfully!")
 

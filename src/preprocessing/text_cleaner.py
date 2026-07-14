@@ -8,20 +8,15 @@ from nltk.stem import WordNetLemmatizer
 
 
 class TextCleaner:
-    """
-    Generic text preprocessing transformer.
-
-    Compatible with any pandas Series.
-    """
 
     def __init__(self):
 
         self.stop_words = set(stopwords.words("english"))
         self.lemmatizer = WordNetLemmatizer()
 
-    # =====================================================
-    # Scikit-Learn Compatibility
-    # =====================================================
+        self.html_pattern = re.compile(r"<.*?>")
+        self.url_pattern = re.compile(r"http\S+|www\S+")
+        self.email_pattern = re.compile(r"\S+@\S+")
 
     def fit(self, X, y=None):
         return self
@@ -29,62 +24,53 @@ class TextCleaner:
     def fit_transform(self, X):
         return self.fit(X).transform(X)
 
-    # =====================================================
-    # Public Transform
-    # =====================================================
-
     def transform(self, text_series):
 
         if not isinstance(text_series, pd.Series):
-            raise TypeError(
-                "Input must be a pandas Series."
-            )
+            raise TypeError("Input must be a pandas Series.")
 
         return text_series.fillna("").apply(self.clean_text)
 
-    # =====================================================
-    # Cleaning Pipeline
-    # =====================================================
-
     def clean_text(self, text):
 
-        text = str(text)
+        text = unicodedata.normalize(
+            "NFKD",
+            str(text)
+        ).lower()
 
-        # Unicode normalization
-        text = unicodedata.normalize("NFKD", text)
+        text = self.html_pattern.sub(" ", text)
+        text = self.url_pattern.sub(" ", text)
+        text = self.email_pattern.sub(" ", text)
 
-        # lowercase
-        text = text.lower()
+        # Preserve meaning
+        text = text.replace("&", " and ")
+        text = text.replace("-", " ")
 
-        # HTML
-        text = re.sub(r"<.*?>", " ", text)
-
-        # URLs
-        text = re.sub(r"http\\S+|www\\S+", " ", text)
-
-        # emails
+        # Keep letters and numbers
         text = re.sub(
-            r"\S+@\S+",
+            r"[^a-z0-9\s]",
             " ",
-            text
+            text,
         )
 
-        # numbers
-        text = re.sub(r"\d+", " ", text)
-
-        # punctuation
-        text = re.sub(
-            r"[^a-z\s]",
-            " ",
-            text
-        )
-
-        # extra spaces
         text = re.sub(
             r"\s+",
             " ",
-            text
+            text,
         ).strip()
+
+        KEEP_TOKENS = {
+            "3d",
+            "4k",
+            "vr",
+            "ar",
+            "ai",
+            "usb",
+            "ios",
+            "android",
+            "mp3",
+            "bluetooth",
+        }
 
         tokens = []
 
@@ -94,6 +80,19 @@ class TextCleaner:
                 continue
 
             if len(word) <= 1:
+                continue
+
+            # Keep important technology tokens
+            if word in KEEP_TOKENS:
+                tokens.append(word)
+                continue
+
+            # Remove pure numbers
+            if word.isdigit():
+                continue
+
+            # Remove ordinal numbers like 1st, 2nd, 10th
+            if re.fullmatch(r"\d+(st|nd|rd|th)", word):
                 continue
 
             lemma = self.lemmatizer.lemmatize(word)

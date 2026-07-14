@@ -28,45 +28,22 @@ class DataLoader:
 
     def initial_cleaning(self, df):
 
-        # -----------------------------
-        # Standardize column names
-        # -----------------------------
-        df.columns = (
-            df.columns
-            .str.strip()
-            .str.lower()
-            .str.replace(" ", "_")
-        )
+        df.columns = (df.columns.str.strip().str.lower().str.replace(" ", "_"))
 
-        # -----------------------------
-        # Remove duplicate rows
-        # -----------------------------
         duplicates = df.duplicated().sum()
 
         print(f"\nDuplicate Rows : {duplicates}")
 
         df = df.drop_duplicates()
 
-        # -----------------------------
-        # Remove empty rows
-        # -----------------------------
         df = df.dropna(how="all")
 
-        # -----------------------------
-        # Remove empty columns
-        # -----------------------------
         df = df.dropna(axis=1, how="all")
 
-        # -----------------------------
-        # Convert date columns
-        # -----------------------------
         for col in df.columns:
 
             if (
-                "date" in col
-                or "deadline" in col
-                or "launched" in col
-            ):
+                "date" in col or "deadline" in col or "launched" in col):
 
                 try:
                     df[col] = pd.to_datetime(df[col])
@@ -84,14 +61,8 @@ class DataLoader:
 
         save_path = Path(save_path)
 
-        save_path.parent.mkdir(
-            parents=True,
-            exist_ok=True
-        )
+        save_path.parent.mkdir(parents=True,exist_ok=True)
 
-        df.to_csv(
-            save_path,
-            index=False
-        )
+        df.to_csv(save_path,index=False)
 
         print(f"\nSaved cleaned dataset to\n{save_path}")

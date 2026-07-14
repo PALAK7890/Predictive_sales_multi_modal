@@ -22,7 +22,7 @@ class Pipeline:
         self.vectorizer = TFIDFVectorizer()
         self.tabular = TabularPreprocessor()
         self.fusion = FeatureFusion()
-        self.trainer = ModelTrainer("svm")
+        self.trainer = ModelTrainer('svm')
         self.evaluator = ModelEvaluator()
 
     def load_data(self):

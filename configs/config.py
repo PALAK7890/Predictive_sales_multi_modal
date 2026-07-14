@@ -35,7 +35,7 @@ DROP_COLUMNS = [
 
 TFIDF_CONFIG = {
 
-    "max_features": 2500,
+    "max_features": 5000,
 
     "ngram_range": (1, 2),
 

@@ -1,15 +1,10 @@
+import numpy as np
 import pandas as pd
 
 from sklearn.compose import ColumnTransformer
-
-from sklearn.pipeline import Pipeline
-
 from sklearn.impute import SimpleImputer
-
-from sklearn.preprocessing import (
-    OneHotEncoder,
-    StandardScaler,
-)
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from configs.config import (
     TARGET_COLUMN,
@@ -22,69 +17,29 @@ from configs.config import (
 
 class TabularPreprocessor:
 
-    """
-    Handles all structured feature preprocessing.
-    """
-
     def __init__(self):
-
         self.preprocessor = None
-
         self.numeric_columns = []
-
         self.categorical_columns = []
-
-    # =====================================================
-    # TARGET CLEANING
-    # =====================================================
 
     def clean_target(self, df):
 
-        df = df.copy()
+        df = df[df[TARGET_COLUMN].isin([POSITIVE_CLASS, NEGATIVE_CLASS])].copy()
 
-        df = df[
-            df[TARGET_COLUMN].isin(
-                [
-                    POSITIVE_CLASS,
-                    NEGATIVE_CLASS,
-                ]
-            )
-        ]
+        df[TARGET_COLUMN] = df[TARGET_COLUMN].map({
+            POSITIVE_CLASS: 1,
+            NEGATIVE_CLASS: 0,
+        })
 
-        df = df.copy()
-
-        df[TARGET_COLUMN] = df[
-            TARGET_COLUMN
-        ].map(
-            {
-                POSITIVE_CLASS: 1,
-                NEGATIVE_CLASS: 0,
-            }
-        )
         return df
-
-        # =====================================================
-# FILTER FINAL CAMPAIGNS
-# =====================================================
 
     def filter_final_campaigns(self, df):
 
-        df = df.copy()
-
-        df = df[
+        return df[
             df[TARGET_COLUMN].isin(
-                [
-                    POSITIVE_CLASS,
-                    NEGATIVE_CLASS
-                ]
+                [POSITIVE_CLASS, NEGATIVE_CLASS]
             )
-        ]
-
-        return df
-
-    # =====================================================
-    # REMOVE LEAKAGE
-    # =====================================================
+        ].copy()
 
     def remove_leakage(self, df):
 
@@ -96,10 +51,6 @@ class TabularPreprocessor:
 
         return df.drop(columns=columns)
 
-    # =====================================================
-    # DROP UNUSED
-    # =====================================================
-
     def drop_unused(self, df):
 
         columns = [
@@ -110,238 +61,100 @@ class TabularPreprocessor:
 
         return df.drop(columns=columns)
 
-    # =====================================================
-    # FEATURE ENGINEERING
-    # =====================================================
-
     def engineer_features(self, df):
 
         df = df.copy()
 
-        if (
-            "launched" in df.columns
-            and
-            "deadline" in df.columns
-        ):
+        df["goal_log"] = np.log1p(df["goal"])
+        df["usd_goal_real_log"] = np.log1p(df["usd_goal_real"])
+
+        if {"launched", "deadline"}.issubset(df.columns):
 
             df["campaign_duration"] = (
-                df["deadline"]
-                - df["launched"]
+                df["deadline"] - df["launched"]
             ).dt.days
 
-            df["launch_year"] = (
-                df["launched"].dt.year
-            )
+            df["launch_year"] = df["launched"].dt.year
+            df["launch_month"] = df["launched"].dt.month
+            df["launch_day"] = df["launched"].dt.day
+            df["launch_weekday"] = df["launched"].dt.weekday
+            df["launch_quarter"] = df["launched"].dt.quarter
 
-            df["launch_month"] = (
-                df["launched"].dt.month
-            )
-
-            df["launch_day"] = (
-                df["launched"].dt.day
-            )
-
-            df["launch_weekday"] = (
-                df["launched"].dt.weekday
-            )
-
-            df["launch_quarter"] = (
-                df["launched"].dt.quarter
-            )
-
-            df = df.drop(
-                columns=[
-                    "launched",
-                    "deadline",
-                ]
+            df.drop(
+                columns=["launched", "deadline"],
+                inplace=True,
             )
 
         return df
 
-    # =====================================================
-    # DETECT COLUMN TYPES
-    # =====================================================
-
-    # =====================================================
-# DETECT COLUMN TYPES
-# =====================================================
-
     def detect_columns(self, X):
 
-        # Numeric columns
         self.numeric_columns = list(
-            X.select_dtypes(include=["number"]).columns
+            X.select_dtypes(include="number").columns
         )
 
-        # Categorical columns
         self.categorical_columns = list(
             X.select_dtypes(
-                include=[
-                    "object",
-                    "category",
-                    "string"
-                ]
+                include=["object", "category", "string"]
             ).columns
         )
 
-        # -------------------------------------------------
-        # Remove text columns
-        # (already represented by TF-IDF)
-        # -------------------------------------------------
-
-        REMOVE_COLUMNS = [
-            "name",
-            "clean_text"
-        ]
+        remove_columns = {"name", "clean_text"}
 
         self.categorical_columns = [
-
             col
-
             for col in self.categorical_columns
-
-            if col not in REMOVE_COLUMNS
-
+            if col not in remove_columns
         ]
-
-    # =====================================================
-    # BUILD PREPROCESSOR
-    # =====================================================
 
     def build_preprocessor(self):
 
-        numeric_pipeline = Pipeline(
+        numeric_pipeline = Pipeline([
+            ("imputer", SimpleImputer(strategy="median")),
+            ("scaler", StandardScaler()),
+        ])
 
-            [
+        categorical_pipeline = Pipeline([
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("encoder", OneHotEncoder(handle_unknown="ignore")),
+        ])
 
-                (
-                    "imputer",
-
-                    SimpleImputer(
-                        strategy="median"
-                    ),
-                ),
-
-                (
-                    "scaler",
-
-                    StandardScaler(),
-                ),
-
-            ]
-
-        )
-
-        categorical_pipeline = Pipeline(
-
-            [
-
-                (
-                    "imputer",
-
-                    SimpleImputer(
-                        strategy="most_frequent"
-                    ),
-                ),
-
-                (
-                    "encoder",
-
-                    OneHotEncoder(
-                        handle_unknown="ignore"
-                    ),
-                ),
-
-            ]
-
-        )
-
-        self.preprocessor = ColumnTransformer(
-
-            [
-
-                (
-                    "numeric",
-
-                    numeric_pipeline,
-
-                    self.numeric_columns,
-
-                ),
-
-                (
-                    "categorical",
-
-                    categorical_pipeline,
-
-                    self.categorical_columns,
-
-                ),
-
-            ]
-
-        )
-        # =====================================================
-    # FIT
-    # =====================================================
-
+        self.preprocessor = ColumnTransformer([
+            ("numeric", numeric_pipeline, self.numeric_columns),
+            ("categorical", categorical_pipeline, self.categorical_columns),
+        ])
     def fit(self, df):
 
         df = self.clean_target(df)
-
         df = self.remove_leakage(df)
-
         df = self.drop_unused(df)
-
         df = self.engineer_features(df)
 
         y = df[TARGET_COLUMN]
-
         X = df.drop(columns=[TARGET_COLUMN])
 
         self.detect_columns(X)
-
         self.build_preprocessor()
-
         self.preprocessor.fit(X)
 
         return self
 
-    # =====================================================
-    # TRANSFORM
-    # =====================================================
-
     def transform(self, df):
 
         df = self.clean_target(df)
-
         df = self.remove_leakage(df)
-
         df = self.drop_unused(df)
-
         df = self.engineer_features(df)
 
         y = df[TARGET_COLUMN]
-
         X = df.drop(columns=[TARGET_COLUMN])
 
-        X_processed = self.preprocessor.transform(X)
-
-        return X_processed, y
-
-    # =====================================================
-    # FIT TRANSFORM
-    # =====================================================
+        return self.preprocessor.transform(X), y
 
     def fit_transform(self, df):
 
         self.fit(df)
-
         return self.transform(df)
-
-    # =====================================================
-    # SAVE
-    # =====================================================
 
     def save(self):
 
@@ -349,20 +162,12 @@ class TabularPreprocessor:
         from pathlib import Path
 
         save_dir = Path("models/encoders")
-
-        save_dir.mkdir(
-            parents=True,
-            exist_ok=True
-        )
+        save_dir.mkdir(parents=True, exist_ok=True)
 
         joblib.dump(
             self.preprocessor,
-            save_dir / "tabular_preprocessor.pkl"
+            save_dir / "tabular_preprocessor.pkl",
         )
-
-    # =====================================================
-    # SUMMARY
-    # =====================================================
 
     def summary(self):
 
@@ -374,11 +179,9 @@ class TabularPreprocessor:
         print(f"Categorical Columns: {len(self.categorical_columns)}")
 
         print("\nNumeric Features")
-
         for col in self.numeric_columns:
             print(f"  • {col}")
 
         print("\nCategorical Features")
-
         for col in self.categorical_columns:
             print(f"  • {col}")

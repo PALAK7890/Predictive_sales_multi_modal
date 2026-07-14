@@ -10,52 +10,50 @@ from configs.config import TFIDF_CONFIG
 
 class TFIDFVectorizer:
 
-    """
-    Wrapper around sklearn's TF-IDF vectorizer.
-    """
-
     def __init__(self):
 
-        self.vectorizer = TfidfVectorizer(
-            **TFIDF_CONFIG
-        )
+        self.vectorizer = TfidfVectorizer(**TFIDF_CONFIG)
 
+        self.model_dir = Path("models/vectorizers")
+        self.report_dir = Path("reports/tables")
 
     def fit(self, text):
 
         self.vectorizer.fit(text)
-
         return self
 
     def transform(self, text):
 
         return self.vectorizer.transform(text)
 
-
     def fit_transform(self, text):
 
         return self.vectorizer.fit_transform(text)
 
-
     def save(self):
 
-        Path( "models/vectorizers").mkdir(parents=True, exist_ok=True )
+        self.model_dir.mkdir(parents=True, exist_ok=True)
 
-        joblib.dump(self.vectorizer, "models/vectorizers/tfidf.pkl" )
-
-
+        joblib.dump(
+            self.vectorizer,
+            self.model_dir / "tfidf.pkl",
+        )
 
     def save_vocabulary(self):
 
-        Path( "reports/tables").mkdir(parents=True, exist_ok=True )
+        self.report_dir.mkdir(parents=True, exist_ok=True)
 
-        vocabulary = pd.DataFrame({"feature": self.vectorizer.get_feature_names_out()})
+        vocabulary = pd.DataFrame(
+            {
+                "feature": self.vectorizer.get_feature_names_out()
+            }
+        )
 
-        vocabulary.to_csv("reports/tables/vocabulary.csv",   index=False )
-
+        vocabulary.to_csv(
+            self.report_dir / "vocabulary.csv",
+            index=False,
+        )
 
     def vocabulary_size(self):
 
-        return len(
-            self.vectorizer.get_feature_names_out()
-        )
+        return len(self.vectorizer.get_feature_names_out())

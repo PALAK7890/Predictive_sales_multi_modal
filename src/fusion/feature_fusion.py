@@ -126,9 +126,7 @@ class FeatureFusion:
 
         print(f"Sparsity     : {(1-density)*100:.2f}%")
 
-    # =====================================================
-    # PIPELINE
-    # =====================================================
+
 
     def fit_transform(
         self,

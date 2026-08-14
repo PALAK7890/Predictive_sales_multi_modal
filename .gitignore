@@ -1,31 +1,72 @@
-cat > .gitignore << EOF
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
 *.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
 # Virtual Environment
 .venv/
 venv/
 env/
+ENV/
+bin/
+lib/
+include/
+local/
 
-# Jupyter
+# Jupyter Notebooks
 .ipynb_checkpoints/
+
+# Caches
+.cache/
+.pytest_cache/
+.eslintcache/
+.stylelintcache/
+nltk_data/
 
 # macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
 
-# VS Code
+# IDEs
 .vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Models
-models/trained/*.pkl
-models/trained/*.joblib
+# Environment & Local Secrets
+.env
+.env.*
+*.env
 
-# Logs
+# Caches and logs
 *.log
+logs/
 
-# Dataset
+# Project-specific Large Datasets (must not be committed to GitHub)
 data/raw/*
 !data/raw/.gitkeep
 
@@ -35,10 +76,14 @@ data/interim/*
 data/processed/*
 !data/processed/.gitkeep
 
-# Reports
-reports/figures/*
-!reports/figures/.gitkeep
+data/embeddings/
+campaign_embeddings.pkl
 
-reports/tables/*
-!reports/tables/.gitkeep
-EOF
+# Project-specific Large Model Artifacts & Vector Databases
+artifacts/chromadb/
+artifacts/fusion/
+kickstarter_campaigns/
+
+# Generated Campaign Reports
+artifacts/reports/campaign_report.txt
+campaign_report.txt

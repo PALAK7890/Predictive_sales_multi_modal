@@ -1,0 +1,16 @@
+Column,DataType
+id,int64
+name,str
+category,str
+main_category,str
+currency,str
+deadline,datetime64[us]
+goal,float64
+launched,datetime64[us]
+pledged,float64
+state,str
+backers,int64
+country,str
+usd_pledged,float64
+usd_pledged_real,float64
+usd_goal_real,float64

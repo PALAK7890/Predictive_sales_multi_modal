@@ -288,7 +288,7 @@ if run_analysis or "facts" in st.session_state:
         with col_pred1:
             st.subheader("Model Prediction Output")
             pred_outcome = prediction["prediction"]
-            success_prob = prediction["success_probability"]
+            success_prob = float(prediction["success_probability"])
             
             if pred_outcome == "Successful":
                 st.markdown(

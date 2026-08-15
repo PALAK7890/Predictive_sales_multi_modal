@@ -292,17 +292,17 @@ if run_analysis or "facts" in st.session_state:
             
             if pred_outcome == "Successful":
                 st.markdown(
-                    f"<div class='success-alert'><strong>PREDICTED OUTCOME: SUCCESSFUL</strong><br>The classifier predicts a success probability of {success_prob}% based on campaign parameters.</div>",
+                    f"<div class='success-alert'><strong>PREDICTED OUTCOME: SUCCESSFUL</strong><br>The classifier predicts a success probability of {success_prob:.2f}% based on campaign parameters.</div>",
                     unsafe_allow_html=True
                 )
             else:
                 st.markdown(
-                    f"<div class='failed-alert'><strong>PREDICTED OUTCOME: FAILED</strong><br>The classifier predicts a failure probability of {100 - success_prob:.2f}% (Success Probability: {success_prob}%).</div>",
+                    f"<div class='failed-alert'><strong>PREDICTED OUTCOME: FAILED</strong><br>The classifier predicts a failure probability of {100 - success_prob:.2f}% (Success Probability: {success_prob:.2f}%).</div>",
                     unsafe_allow_html=True
                 )
                 
             st.write("")
-            st.metric("Success Probability", f"{success_prob}%", help="Calculated using the XGBoost fused features model.")
+            st.metric("Success Probability", f"{success_prob:.2f}%", help="Calculated using the XGBoost fused features model.")
             st.progress(success_prob / 100.0)
             
             st.write("")

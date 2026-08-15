@@ -2,6 +2,7 @@
 Kickstarter Campaign Intelligence System - Streamlit Dashboard
 """
 
+import xgboost
 import streamlit as st
 import pandas as pd
 import numpy as np
